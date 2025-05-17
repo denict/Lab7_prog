@@ -14,6 +14,7 @@ public class ConsoleOutput implements OutputHandler {
      * Поток вывода, используемый для печати сообщений.
      */
     private final PrintStream printStream = System.out;
+    public Object println;
 
     /**
      * Выводит строку без перехода на новую строку.

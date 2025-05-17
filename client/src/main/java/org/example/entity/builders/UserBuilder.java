@@ -18,6 +18,7 @@ public class UserBuilder extends Builder<User> {
     public String askLogin() {
         while (true) {
             consoleOutput.println("Введите логин (не может быть пустым):");
+            consoleOutput.print("> ");
             String login = consoleInput.readLine();
             if (login != null && !login.trim().isEmpty()) {
                 return login.trim();
@@ -26,14 +27,35 @@ public class UserBuilder extends Builder<User> {
             dropIfFileMode();
         }
     }
+    public  String askPasswordLogin() {
+        while (true) {
+            consoleOutput.println("Введите пароль");
+            consoleOutput.print("> ");
+            String password = consoleInput.readLine();
+            if (password == null) password = "";
+            password = password.trim();
+            boolean lengthOk = password.length() >= 8;
+            boolean hasLower = password.matches(".*[a-z].*");
+            boolean hasUpper = password.matches(".*[A-Z].*");
+            boolean hasDigit = password.matches(".*\\d.*");
+            boolean hasSpecial = password.matches(".*[^a-zA-Z0-9].*");
+            boolean hasSpace = password.matches(".*\\s.*");
+            if (!hasSpace && lengthOk && hasLower && hasUpper && hasDigit && hasSpecial) {
+                return password;
+            }
+            consoleOutput.printError("Неправильно набран пароль!");
+            dropIfFileMode();
+        }
+    }
 
     public String askPassword() {
         while (true) {
             consoleOutput.println("Введите пароль (минимум 8 символов, хотя бы 1 заглавная и строчная буквы, цифру и спецсимвол):");
+            consoleOutput.print("> ");
             String password = consoleInput.readLine();
             if (password == null) password = "";
             password = password.trim();
-            boolean lengthOk = password.length() > 8;
+            boolean lengthOk = password.length() >= 8;
             boolean hasLower = password.matches(".*[a-z].*");
             boolean hasUpper = password.matches(".*[A-Z].*");
             boolean hasDigit = password.matches(".*\\d.*");
@@ -50,10 +72,7 @@ public class UserBuilder extends Builder<User> {
 
 
     public User build() {
-        consoleOutput.println("Создание нового пользователя");
-        consoleOutput.println("Введите логин пользователя");
         String login = askLogin();
-        consoleOutput.println("Введите пароль пользователя");
         String password = askPassword();
         return new User(login, password);
     }

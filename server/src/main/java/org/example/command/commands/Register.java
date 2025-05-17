@@ -27,6 +27,6 @@ public class Register extends Command implements Serializable {
             return new Response(true, "Регистрация успешна!");
         }
 
-        return new Response(false, "Регистрация не прошла, логин пользователя уже занят, повторите попытку!" + dataBaseManager.existUser(request.getUser()));
+        return new Response(false, "Регистрация не прошла, логин пользователя уже занят, повторите попытку!");
     }
 }

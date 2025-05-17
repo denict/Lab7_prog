@@ -35,6 +35,7 @@ public class Help extends Command implements Serializable {
 
         // Stream API
         commandManager.getCommands().entrySet().stream()
+                .filter(entry -> !entry.getKey().equals("login") && !entry.getKey().equals("register") && !entry.getKey().equals("check_by_id"))
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(entry ->
                         sb.append(entry.getKey() + " - " + entry.getValue().getDescription() + "\n")

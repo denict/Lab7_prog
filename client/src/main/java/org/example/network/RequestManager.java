@@ -3,6 +3,7 @@ import org.example.command.Command;
 import org.example.command.commands.Login;
 import org.example.command.commands.Register;
 import org.example.entity.builders.UserBuilder;
+import org.example.exception.LogoutException;
 import org.example.managers.CommandManager;
 import org.example.utility.ConsoleInput;
 import org.example.utility.ConsoleOutput;
@@ -24,7 +25,7 @@ public class RequestManager implements Runnable{
         this.client = client;
     }
 
-    private void runCommand(String request, CommandManager commandManager, ConsoleOutput consoleOutput, User user) throws InterruptedException {
+    private void runCommand(String request, CommandManager commandManager, ConsoleOutput consoleOutput, User user) throws InterruptedException, LogoutException {
 
             String[] requestArray = request.split(" ");
             String nameCommand = requestArray[0].toLowerCase();
@@ -38,26 +39,33 @@ public class RequestManager implements Runnable{
             client.disconnect();
         }
 
-        if (nameCommand.equals("execute_script")) {
-            String scriptName = requestArray[1];
-            Set<String> scriptSet = new HashSet<>();
-            if (hasRecursion(scriptName, scriptSet)) {
-                consoleOutput.printError("Обнаружена рекурсия в скрипте: " + scriptName);
-                return;
-            }
-        }
+
+
+
 
         if (!commandManager.getCommands().containsKey(nameCommand)) {
             consoleOutput.println("Команда \"" + nameCommand + "\" не найдена. Воспользуйтесь командой \"help\" для просморта доступных команд");
             return;
         }
         try {
+
             Command command = commandManager.getCommands().get(nameCommand);
             String[] args = Arrays.copyOfRange(requestArray, 1, requestArray.length);
             if (command.getArgsCount() != args.length) {
                 consoleOutput.printError("Команда " + nameCommand + " принимает " + command.getArgsCount() + " аргумент(а)." + " Правильное использование: " + nameCommand + " " + command.getUsageArg());
                 return;
             }
+            if (nameCommand.equals("update_by_id") || nameCommand.equals("remove_by_id")) {
+                Response existByIdResponse = client.sendRequest(new Request(
+                        commandManager.getCommands().get("check_by_id"), args, user));
+                if (existByIdResponse == null || !existByIdResponse.isSuccess()) {
+                    consoleOutput.printError(existByIdResponse.getMessage() != null ? existByIdResponse.getMessage() : "Ошибка при проверке id");
+                    return;
+                }
+            }
+
+
+
 
             command.execute(args, user); // sendRequest отправляется на сервер
             commandManager.addToHistory(commandManager.getCommands().get(nameCommand));
@@ -77,64 +85,70 @@ public class RequestManager implements Runnable{
             client.disconnect();
         }));
 
+
         while (true) {
-            System.out.println("Здравствуйте! Хотите вы зарегистрироваться или войти в систему?\n \"login\" или \"register\")");
-            String line = consoleInput.readLine();
-            if (line.equals("login")) {
-                System.out.println("Вход в систему");
-            } else (line.equals("register")) {
-                Response response = client.sendRequest(new Request(new Login(consoleOutput, client), user))
-            }
-        }
-//        boolean success = false;
-        User user = loginToDb();
-        boolean
-        if (isLogged) {
-            Response response = client.sendRequest(new Request(new Login(consoleOutput, client), user));
-            System.out.println();
-
-            if (!response.isSuccess()) {
-                System.out.println("Такого пользователя не существует или введены неверные данные.");
-                while (true) {
-                    exit();
-                    user = loginToDb(); // создание нового пользователя
-                    Response newResponse = client.sendRequest(new Request(new Login(consoleOutput, client), user));
-                    System.out.println(newResponse.getMessage());
-                    if (newResponse.isSuccess()) {
-                        success = true;
-                        break;
-                    } else {
-                        break;
-                    }
-                }
-            } else {
-                success = true;
-            }
-        }
-
-        if (!success) {
-            Response response = client.sendRequest(new Request(new Register(consoleInput, consoleOutput, client), user));
-            System.out.println(response.getMessage());
-            if (!response.isSuccess()) {
-                System.out.println("Та самая ошибка");
-                System.exit(1);
-            }
-        }
-
-
-        consoleOutput.println("Здравствуйте! Для справки по доступным командам, нажмите \"help\".");
-        while (true) {
+            // Вход в систему
             try {
-                consoleOutput.print("> ");
-                String request = consoleInput.readLine().trim();
-                runCommand(request, commandManager, consoleOutput, user);
+                User user = authorizeUser();
+                consoleOutput.println("Здравствуйте! Для справки по доступным командам, нажмите \"help\".");
+                while (true) {
+                    consoleOutput.print("> ");
+                    String request = consoleInput.readLine().trim();
+                    runCommand(request, commandManager, consoleOutput, user);
+                }
             } catch (NoSuchElementException e) {
                 consoleOutput.println("Конец ввода."); // Ctrl+D
-                break;
+                return;
+            } catch (LogoutException e) {
+            } catch (InterruptedException e) {
+                consoleOutput.println("Поток прерван: " + e.getMessage());
             } catch (Exception e) {
                 consoleOutput.printError("Ошибка во время выполнения: " + e.getMessage());
                 e.printStackTrace();
-                break;
+                return;
+            }
+        }
+    }
+
+    /**
+     * Вход в аккаунт или регистрация
+     * @return Авторизация пользователя User, в котором хранится логин и пароль для
+     * дальнейшей идентификации и логирование запросов на сервер и базу данных
+     */
+    private User authorizeUser() {
+        while (true) {
+            consoleOutput.println("Здравствуйте! Хотите зарегистрироваться или войти в систему? (\"login\" или \"register\"), или введите \"exit\" для выхода.");
+            consoleOutput.print("> ");
+            String line = consoleInput.readLine().trim().toLowerCase();
+
+            if (line.equals("login")) {
+                consoleOutput.println("Вход в систему");
+                UserBuilder userbuilder = new UserBuilder(consoleInput, consoleOutput);
+                String login = userbuilder.askLogin();
+                String password = userbuilder.askPasswordLogin();
+                User user = new User(login, password);
+                Response response = client.sendRequest(new Request(new Login(consoleOutput, client), user));
+                if (response.isSuccess()) {
+                    consoleOutput.println("Успешный вход: " + response.getMessage());
+                    return user;
+                } else {
+                    consoleOutput.println("Ошибка входа: " + response.getMessage());
+                }
+            } else if (line.equals("register")) {
+                consoleOutput.println("Регистрация нового пользователя");
+                User user = loginToDb();
+                Response response = client.sendRequest(new Request(new Register(consoleInput, consoleOutput, client), user));
+                if (response.isSuccess()) {
+                    consoleOutput.println("Успешная регистрация: " + response.getMessage());
+                    return user;
+                } else {
+                    consoleOutput.println("Ошибка регистрации: " + response.getMessage());
+                }
+            } else if (line.equals("exit")) {
+                consoleOutput.println("До свидания!");
+                System.exit(0);
+            } else {
+                consoleOutput.println("Пожалуйста, введите \"login\", \"register\" или \"exit\".");
             }
         }
     }
@@ -169,31 +183,39 @@ public class RequestManager implements Runnable{
         }
     }
 
-    private boolean hasRecursion(String scriptName, Set<String> scriptSet) {
-        if (scriptSet.contains(scriptName)) {
-            return true;
-        }
-
-        scriptSet.add(scriptName);
-
-        try (Scanner fileScanner = new Scanner(new File(scriptName))) {
-            while (fileScanner.hasNextLine()) {
-                String line = fileScanner.nextLine().trim();
-                if (line.startsWith("execute_script")) {
-                    String[] parts = line.split("\\s+");
-                    if (parts.length == 2) {
-                        String nestedScript = parts[1];
-                        if (hasRecursion(nestedScript, scriptSet)) {
-                            return true;
-                        }
-                    }
-                }
-            }
-        } catch (FileNotFoundException e) {
-            System.out.println("Файл скрипта не найден: " + scriptName);
-        }
-
-        scriptSet.remove(scriptName);
-        return false;
-    }
+    //            if (nameCommand.equals("execute_script")) {
+//                String scriptName = requestArray[1];
+//                Set<String> scriptSet = new HashSet<>();
+//                if (hasRecursion(scriptName, scriptSet)) {
+//                    consoleOutput.printError("Обнаружена рекурсия в скрипте: " + scriptName);
+//                    return;
+//                }
+//            }
+//    private boolean hasRecursion(String scriptName, Set<String> scriptSet) {
+//        if (scriptSet.contains(scriptName)) {
+//            return true;
+//        }
+//
+//        scriptSet.add(scriptName);
+//
+//        try (Scanner fileScanner = new Scanner(new File(scriptName))) {
+//            while (fileScanner.hasNextLine()) {
+//                String line = fileScanner.nextLine().trim();
+//                if (line.startsWith("execute_script")) {
+//                    String[] parts = line.split("\\s+");
+//                    if (parts.length == 2) {
+//                        String nestedScript = parts[1];
+//                        if (hasRecursion(nestedScript, scriptSet)) {
+//                            return true;
+//                        }
+//                    }
+//                }
+//            }
+//        } catch (FileNotFoundException e) {
+//            System.out.println("Файл скрипта не найден: " + scriptName);
+//        }
+//
+//        scriptSet.remove(scriptName);
+//        return false;
+//    }
 }

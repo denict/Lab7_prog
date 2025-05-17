@@ -42,12 +42,20 @@ public class ExecuteScript extends Command implements Serializable {
      * @param args аргументы
      */
     public Response execute(Request request) {
-        String pathName = (String) request.getArgs();
+        String pathName;
+        if (request.getArgs() instanceof String) {
+            pathName = (String) request.getArgs();
+        }
+        else {
+            String[] arguments = (String[]) request.getArgs();
+
+            pathName = arguments[0];
+        }
         StringBuilder sb = new StringBuilder("");
         try {
-//            if (pathName == null) {
-//                return new Response(false, "Конец рекурсии или конец последнего вызова");
-//            }
+            if (pathName == null) {
+                return new Response(false, "Конец рекурсии или конец последнего вызова");
+            }
             File scriptFile = new File(pathName);
 //            Scanner scanner = new Scanner(scriptFile);
             if (!scriptFile.exists()) {

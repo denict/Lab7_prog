@@ -37,13 +37,17 @@ public class RemoveByID extends Command implements Serializable {
         try {
             int id = Integer.parseInt(((String[])request.getArgs())[0]);
             User user = request.getUser();
+            //Проверяем, принадлежит ли элемент пользователю
+            if (!dataBaseManager.checkUserById(id, user)) {
+                return new Response(false, "Вы не являетесь владельцем элемента с id=\"" + id + "\"!");
+            }
             // Пытаемся удалить элемент из базы данных по id и пользователю
             if (dataBaseManager.deleteOrganization(id, user)) {
                 // Удаление элемента из коллекции
                 collectionManager.removeById(id);
                 return new Response(true, "Элемент с id=" + id + " был успешно удален!");
             } else{
-                return new Response(false, "Элемента с id=" + id + " не был удален! Его просто нет в коллекции.");
+                return new Response(false, "Элемента с id=" + id + " не был удален!");
             }
         } catch (NumberFormatException e) {
             return new Response(false, "Введите целочисленное число");

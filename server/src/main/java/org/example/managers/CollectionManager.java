@@ -115,7 +115,7 @@ public class CollectionManager {
         lock.lock();
         try {
             minElement = collection.stream()
-                    .min(Organization::compareTo)
+                    .max(Organization::compareTo)
                     .orElse(null);
         } finally {
             lock.unlock();
@@ -204,7 +204,7 @@ public class CollectionManager {
 
 
     /**
-     * Удаляет первый ��лемент коллекции
+     * Удаляет первый элемент коллекции
      * Если коллекция пуста, ничего не делает
      */
     public void removeFirstElementOfCollection() {
@@ -317,8 +317,9 @@ public class CollectionManager {
         lock.lock();
         try {
             if (organizationMap.containsKey(id)) {
+                organizationMap.remove(id);
                 organizationMap.put(id, organization);
-                collection.remove(organization);
+                collection.removeIf(org -> org.getId() == id);
                 collection.push(organization);
                 updateSort();
                 updateMinElement();

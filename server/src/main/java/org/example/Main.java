@@ -8,11 +8,14 @@ import org.example.network.ServerRunnerManager;
 import org.example.utility.ConsoleInput;
 import org.example.utility.ConsoleOutput;
 
-import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
-// ssh -p 2222 -L 5252:pg:5432 s467727@helios.cs.ifmo.ru - прокидывание порта
+
+
 public class Main {
-    public static void main(String[] args) throws SQLException {
+    public static void main(String[] args) throws SQLException, IOException {
+
+
         DataBaseManager dataBaseManager = new DataBaseManager();
         ConsoleInput consoleInput = new ConsoleInput();
         ConsoleOutput consoleOutput = new ConsoleOutput();
@@ -28,6 +31,7 @@ public class Main {
             register(new Add(collectionManager, dataBaseManager));
             register(new UpdateByID(collectionManager, dataBaseManager));
             register(new RemoveByID(collectionManager, dataBaseManager));
+            register(new CheckById(collectionManager, dataBaseManager));
             register(new Clear(collectionManager, dataBaseManager));
             register(new ExecuteScript(this, consoleInput, consoleOutput, runnerScriptManager));
             register(new RemoveFirst(collectionManager, dataBaseManager));
@@ -38,6 +42,7 @@ public class Main {
             register(new PrintUniqueAnnualTurnover(collectionManager, consoleOutput));
             register(new Login(dataBaseManager));
             register(new Register(dataBaseManager));
+            register(new Logout());
         }};
         // загрузка начального состоянии коллекции из БД
         collectionManager.loadCollection();
@@ -47,3 +52,8 @@ public class Main {
 
     }
 }
+
+
+
+
+

@@ -46,9 +46,9 @@ public class Client implements Serializable {
 
     public void disconnect() {
         try {
-            socketChannel.close();
-            reader.close();
-            writer.close();
+            if (socketChannel != null) socketChannel.close();
+            if (reader != null) reader.close();
+            if (writer != null) writer.close();
         }catch (IOException e) {
             System.err.println("Ошибка при закрытии соединения" + e.getMessage());
         }

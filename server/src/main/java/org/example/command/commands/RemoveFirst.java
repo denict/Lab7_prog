@@ -1,6 +1,7 @@
 package org.example.command.commands;
 
 import org.example.command.Command;
+import org.example.entity.Organization;
 import org.example.managers.CollectionManager;
 import org.example.managers.DataBaseManager;
 import org.example.network.Request;
@@ -36,6 +37,11 @@ public class RemoveFirst extends Command implements Serializable {
         User user = request.getUser();
         if (collectionManager.getCollection() == null || collectionManager.getCollection().isEmpty()) {
             return new Response(false, "Коллекция пуста. Нельзя удалить первый элемент.");
+        }
+        Integer IdFirstOrg = collectionManager.getFirstElementId();
+        // Проверяем, есть ли у пользователя доступ к первому элементу коллекции
+        if (!dataBaseManager.checkUserById(IdFirstOrg, user)) {
+            return new Response(false, "Вы не являетесь владельцем первого элемента коллекции! У первого элемента id=" + IdFirstOrg);
         }
         if (dataBaseManager.deleteOrganization(collectionManager.getFirstElementId(), user)) {
             collectionManager.removeFirstElementOfCollection();

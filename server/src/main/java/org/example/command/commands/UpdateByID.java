@@ -43,7 +43,9 @@ public class UpdateByID extends Command implements Serializable {
                 int id = Integer.parseInt(((String[])(request.getArgs()))[0]);
                 Organization organization = request.getOrganization();
                 User user = request.getUser();
-
+                if (!dataBaseManager.checkUserById(id, user)) {
+                    return new Response(false, "Вы не являетесь владельцем элемента с id=\"" + id + "\"!");
+                }
                 // Сначала обновляем в базе данных
                 if (dataBaseManager.updateOrganization(id, user, organization)) {
                     // Если обновление в базе данных прошло успешно, обновляем в коллекции

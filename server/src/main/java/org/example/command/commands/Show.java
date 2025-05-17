@@ -43,7 +43,7 @@ public class Show extends Command implements Serializable {
         sb.append("Количество элементов: " + collectionManager.getCollectionSize() + "\n");
         int cou = 1;
         // StreamAPI
-        Collection <Organization> collection = collectionManager.getCollection().stream().sorted(Comparator.comparing(Organization::getName)).collect(Collectors.toList());
+        Collection <Organization> collection = collectionManager.getCollection().stream().sorted(Comparator.comparing(Organization::getId)).toList(); // было сортировка по ::  getName
         for (Organization org : collection) {
             sb.append(cou++ + ": " + org.toString() + "\n");
         }

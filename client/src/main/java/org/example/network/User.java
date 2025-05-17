@@ -2,7 +2,7 @@ package org.example.network;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Scanner;
+
 
 public class User implements Serializable {
     @Serial
@@ -16,25 +16,6 @@ public class User implements Serializable {
         this.password = password;
     }
 
-//    public boolean isLogin() {
-//        Scanner scanner = new Scanner(System.in);
-//        String line;
-//        while (true) {
-//            System.out.println("Вы зарегистрированы? (y/n)");
-//            line = scanner.nextLine();
-//            switch (line) {
-//                case "y", "yes", "Y", "YES", "ДА", "да" -> {
-//                    return true;
-//                }
-//                case "n", "N", "no", "NO", "нет", "НЕТ" -> {
-//                    return false;
-//                }
-//                default -> {
-//                    System.out.println("Неверный ввод");
-//                }
-//            }
-//        }
-//    }
 
     public void setLogin(String login) {
         this.login = login;

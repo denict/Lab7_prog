@@ -55,31 +55,6 @@ public abstract class Builder<T> {
         }
     }
 
-//    public String askLogin(String valueName, String valueInfo, Predicate<String> validateRule, String errorMessage) {
-//        while (true) {
-//            consoleOutput.print(valueName + " (" + valueInfo + ")\n> ");
-//            String value = consoleInput.readLine();
-//            if (value != null && value.isBlank()) value = value.trim();
-//            if (validateRule.test(value)) return value;
-//            consoleOutput.printError("Введенное значение не удовлетворяет одному или нескольким условиям валидации поля \"" + valueName + "\". " + errorMessage);
-//            dropIfFileMode();
-//        }
-//    }
-//
-//    public String askPassword(String valueName, String valueInfo, Predicate<String> validateRule, String errorMessage) {
-//        while (true) {
-//            consoleOutput.print(valueName + " (" + valueInfo + ")\n> ");
-//            String value = consoleInput.readLine();
-//            if (value != null && value.isBlank()) value = value.trim();
-//            if (validateRule.test(value)) return value;
-//            consoleOutput.printError("Введенное значение не удовлетворяет одному или нескольким условиям валидации поля \"" + valueName + "\". " + errorMessage);
-//            dropIfFileMode();
-//        }
-//    }
-
-
-
-
 
     /**
      * Запрашивает у пользователя значение из Enum с валидацией.

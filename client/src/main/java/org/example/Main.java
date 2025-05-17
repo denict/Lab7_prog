@@ -1,5 +1,4 @@
 package org.example;
-import org.example.command.Command;
 import org.example.command.commands.*;
 import org.example.managers.CommandManager;
 import org.example.network.*;
@@ -19,6 +18,7 @@ public class Main {
             register(new Info(consoleOutput, client));
             register(new Show(consoleOutput, client));
             register(new CountByOfficialAddress(consoleOutput, client));
+            register(new CheckById(consoleOutput, client));
             register(new FilterByAnnualTurnover(consoleOutput, client));
             register(new Help(consoleOutput, client));
             register(new History(consoleOutput, client));
@@ -29,6 +29,7 @@ public class Main {
             register(new ExecuteScript(consoleOutput, client));
             register(new Login(consoleOutput, client));
             register(new Register(consoleInput, consoleOutput, client));
+            register(new Logout(consoleOutput));
         }};
         client.connect();
         RequestManager requestManager = new RequestManager(consoleInput, consoleOutput, commandManager, client);

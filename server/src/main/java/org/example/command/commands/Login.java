@@ -26,7 +26,7 @@ public Login(DataBaseManager dataBaseManager) {
         if (dataBaseManager.existUser(request.getUser())) {
             return new Response(true, "Авторизация успешна!");
         } else {
-            return new Response(false, "Авторизация не прошла");
+            return new Response(false, "Авторизация не прошла, некорректно введён логин или пароль");
         }
     }
 

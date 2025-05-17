@@ -14,6 +14,8 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.Date;
 
@@ -46,7 +48,7 @@ public class DataBaseManager {
             String url = prop.getProperty("url");
             String user = prop.getProperty("login");
             String password = prop.getProperty("password");
-            pepper = Files.readString(Paths.get("pepper.txt")).trim();
+            pepper = prop.getProperty("pepper");
             this.connection = DriverManager.getConnection(url, user, password);
         } catch (IOException e) {
             throw new SQLException("Ошибка загрузки конфигурации БД");
@@ -193,23 +195,24 @@ public class DataBaseManager {
             preparedStatement.setString(1, org.getName());
             preparedStatement.setLong(2, org.getCoordinates().getX());
             preparedStatement.setLong(3, org.getCoordinates().getY());
-            preparedStatement.setString(4, org.getCreationDate().toString());
+            preparedStatement.setTimestamp(4, new java.sql.Timestamp(org.getCreationDate().getTime()));
             preparedStatement.setDouble(5, org.getAnnualTurnover());
-            preparedStatement.setString(6, org.getOrganizationType().toString());
+            if (org == null || org.getOrganizationType() == null) {
+                preparedStatement.setNull(6, java.sql.Types.OTHER);
+            } else {
+                preparedStatement.setObject(6, org.getOrganizationType().toString(), java.sql.Types.OTHER);
+            }
             preparedStatement.setString(7, org.getOfficialAddress().getStreet());
-            preparedStatement.setString(8, org.getOfficialAddress().getZipCode());
+            if (org.getOfficialAddress().getZipCode() == null) {
+                preparedStatement.setNull(8, java.sql.Types.VARCHAR);
+            } else {
+                preparedStatement.setString(8, org.getOfficialAddress().getZipCode());
+            }
             preparedStatement.setString(9, user.getLogin());
             preparedStatement.setInt(10, id);
             int rows = preparedStatement.executeUpdate();
             return rows > 0;
-//            ResultSet resultSet = preparedStatement.executeQuery();
-//            if (!resultSet.next()) {
-//                System.err.println("Не удалось обновить объект organization");
-//                resultSet.close();
-//                return false;
-//            }
-//            System.out.println("Объект успешно обновлён!");
-//            return true;
+
 
         } catch(SQLException e) {
             System.err.println("Ошибка выполнения запроса на обновление организации по ID");
@@ -299,6 +302,29 @@ public class DataBaseManager {
         return -52;
     }
 
+    public boolean checkUserById(int id, User user) {
+        Connection connection = this.connection;
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(queryManager.getUserByID);
+            preparedStatement.setInt(1, id);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                String user_login = resultSet.getString("user_login");
+                if (user_login.equals(user.getLogin())) {
+                    resultSet.close();
+                    return true;
+                } else {
+                    resultSet.close();
+                    return false;
+                }
+            }
+            resultSet.close();
+            return false;
+        } catch (SQLException e) {
+            System.err.println("Ошибка выполнения запроса на получение пользователя по ID");
+            return false;
+        }
+    }
 
 
     /**
@@ -312,19 +338,38 @@ public class DataBaseManager {
                 PreparedStatement preparedStatement = connection.prepareStatement(queryManager.getAllOrganizations);
                 ResultSet resultSet = preparedStatement.executeQuery();
                 while (resultSet.next()) {
-                    organizations.add(new Organization(resultSet.getInt(1),
-                            resultSet.getString(2),
-                            new Coordinates(resultSet.getLong(3), resultSet.getLong(4)),
-                            Date.from(
-                                    LocalDateTime.parse(
-                                            resultSet.getString(5),
-                                            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
-                                    ).atZone(ZoneId.systemDefault()).toInstant()
-                            ),
-                            resultSet.getDouble(6),
-                            OrganizationType.valueOf(resultSet.getString(7)),
-                            new Address(resultSet.getString(8), resultSet.getString(9))
-                            ));
+                    Integer id = resultSet.getInt(1);
+                    String name = resultSet.getString(2);
+                    Long x = resultSet.getLong(3);
+                    Long y = resultSet.getLong(4);
+                    Coordinates coordinates = new Coordinates(x, y);
+                    String dateString = resultSet.getString(5);
+                    LocalDateTime dateTime = null;
+                    DateTimeFormatter[] formatters = {
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"),
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SS"),
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S"),
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                    };
+                    for (DateTimeFormatter f : formatters) {
+                        try {
+                            dateTime = LocalDateTime.parse(dateString, f);
+                            break;
+                        } catch (DateTimeParseException ignored) {}
+                    }
+                    if (dateTime == null) throw new IllegalArgumentException("Неверный формат даты: " + dateString);
+                    Date creationDate = Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant());
+                    Double annualTurnover = resultSet.getDouble(6);
+                    OrganizationType organizationType = (resultSet.getString(7) == null) ? null : OrganizationType.valueOf(resultSet.getString(7));
+                    String street = resultSet.getString(8);
+                    String zipCode = (resultSet.getString(9) == null) ? null : resultSet.getString(9);
+                    Address officialAddress = new Address(street, zipCode);
+
+                organizations.add(new Organization(id, name, coordinates,
+                        creationDate,
+                        annualTurnover,
+                        organizationType,
+                        officialAddress));
                 }
                 resultSet.close();
                 return organizations;

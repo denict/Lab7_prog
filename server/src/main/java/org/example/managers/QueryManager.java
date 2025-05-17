@@ -14,12 +14,7 @@ public class QueryManager {
      */
     public final String findingUser = "SELECT password, salt FROM users WHERE login = ?;";
 
-    /**
-     * SQL-запрос для получения соли пользователя.
-     * Параметры:
-     * 1. Имя пользователя (String)
-     */
-    public final String getPassword = "SELECT salt FROM users WHERE login = ?;";
+    public final String getUserByID = "SELECT user_login FROM organization WHERE id_organization = ?;";
 
     /**
      * SQL-запрос для добавления нового пользователя.

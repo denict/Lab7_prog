@@ -43,7 +43,7 @@ public class OrganizationBuilder extends Builder<Organization> {
         consoleOutput.println("Создание нового объекта Organization");
         String name = askString("Введите поле \"name\"", "Последовательность символов String, не может быть пустой", validateName, "Неверный формат ввода!");
         Coordinates coordinates = new CoordinatesBuilder(consoleInput, consoleOutput).build();
-        Double annualTurnover = askDouble("Введите поле \"annualTurnover\"", "Целочисленное значение типа Double", validateAnnualTurnover, "Неверный формат ввода!");
+        Double annualTurnover = askDouble("Введите поле \"annualTurnover\"", "Целочисленное значение типа Double, не может быть пустым и > 0", validateAnnualTurnover, "Неверный формат ввода!");
         OrganizationType type = askEnum("Введите поле \"type\"", "Тип организации из \"OrganizationType\", может быть пустым (Enter)", OrganizationType.class, validateType, "Неверный формат ввода!");
         Address officialAddress = new AddressBuilder(consoleInput, consoleOutput).build();
         Date creationDate = new Date();

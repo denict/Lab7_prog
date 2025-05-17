@@ -1,5 +1,3 @@
-
-
 package org.example.network;
 
 import org.example.utility.ConsoleOutput;
